@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute; // <-- PASTIKAN INI DI-IMPORT
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Riskihajar\Terbilang\Facades\Terbilang; // <-- Pastikan ini di-import
+use Illuminate\Support\Facades\Config;
+use Riskihajar\Terbilang\Facades\Terbilang;
 
 class CashProofOfExpenditure extends Model
 {
@@ -15,8 +17,9 @@ class CashProofOfExpenditure extends Model
     protected $fillable = [
         'school_id',
         'activity_id',
+        'number_of_students',
         'nominal',
-        'sorted', // 'terbilang'
+        'sorted',
     ];
 
     protected function casts(): array
@@ -26,21 +29,50 @@ class CashProofOfExpenditure extends Model
         ];
     }
 
-    /**
-     * Metode ini akan dijalankan secara otomatis oleh Laravel.
-     * Kita akan menggunakannya untuk mengisi kolom 'sorted'.
-     */
     protected static function booted(): void
     {
-        // Event 'saving' akan dijalankan setiap kali model akan disimpan (create atau update)
         static::saving(function (CashProofOfExpenditure $expenditure) {
-            // Cek jika nilai 'nominal' ada atau jika 'sorted' masih kosong
-            if ($expenditure->nominal && (empty($expenditure->sorted) || $expenditure->isDirty('nominal'))) {
-                // Buat nilai terbilang secara otomatis di sisi server
+            if ($expenditure->isDirty('nominal')) {
+                Config::set('terbilang.locale', 'id');
                 $expenditure->sorted = ucwords(Terbilang::make($expenditure->nominal)) . ' Rupiah';
             }
         });
     }
+
+    // --- AREA PENAMBAHAN ACCESSOR ---
+
+    /**
+     * Accessor untuk menghitung Total PPN secara dinamis.
+     */
+    protected function totalPpn(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => ($this->activity?->ppn ?? 0) * $this->number_of_students,
+        );
+    }
+
+    /**
+     * Accessor untuk menghitung Total PPH secara dinamis.
+     */
+    protected function totalPph(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => ($this->activity?->pph ?? 0) * $this->number_of_students,
+        );
+    }
+
+    /**
+     * Accessor untuk menghitung jumlah total pajak (PPN + PPH).
+     */
+    protected function totalPajak(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->total_ppn + $this->total_pph,
+        );
+    }
+
+
+    // --- RELASI ---
 
     public function school(): BelongsTo
     {

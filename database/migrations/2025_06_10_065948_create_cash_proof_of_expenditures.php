@@ -15,10 +15,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('school_id')->constrained('schools');
             $table->foreignId('activity_id')->constrained('activities');
-            $table->decimal('nominal', 9, 2);
+            $table->unsignedSmallInteger('number_of_students')->default(0); // Kolom yang sudah ada, kita manfaatkan
+            $table->decimal('nominal', 15, 2)->default(0.00); // <-- TAMBAHKAN KOLOM INI
             $table->text('sorted');
             $table->timestamps();
-            $table->softDeletes()->nullable();
+            $table->softDeletes(); // ->nullable() tidak diperlukan
         });
     }
 

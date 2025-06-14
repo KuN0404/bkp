@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('schools', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('subdistric_id')->constrained('subdistricts');
+            $table->foreignId('subdistrict_id')->constrained('subdistricts');
             $table->string('school_name');
             $table->string('principal_name');
             $table->string('principal_nip')->nullable();

@@ -36,7 +36,7 @@ class SchoolResource extends Resource
     {
         return $form
             ->schema([
-                Select::make('subdistric_id') // Sesuaikan dengan nama kolom yang benar
+                Select::make('subdistrict_id') // Sesuaikan dengan nama kolom yang benar
                     ->relationship('subdistrict', 'subdistrict_name')
                     ->label('Kecamatan')
                     ->searchable()

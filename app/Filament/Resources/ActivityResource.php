@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use App\Models\Activity;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
@@ -41,6 +43,32 @@ class ActivityResource extends Resource
                     ->label('Nama Penanggung Jawab')
                     ->required()
                     ->maxLength(255),
+                TextInput::make('dpp')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->required()
+                    ->live(onBlur: true) // Memicu update saat user pindah field
+                    ->afterStateUpdated(fn (Get $get, Set $set) => self::updateTotal($get, $set)),
+
+                TextInput::make('ppn')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->required()
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn (Get $get, Set $set) => self::updateTotal($get, $set)),
+
+                TextInput::make('pph')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->required()
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn (Get $get, Set $set) => self::updateTotal($get, $set)),
+
+                TextInput::make('total')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->readOnly() // <-- KUNCI UTAMA: Field ini tidak bisa diisi manual
+                    ->required(),
             ]);
     }
 
@@ -50,6 +78,7 @@ class ActivityResource extends Resource
             ->columns([
                 TextColumn::make('activity_name')->label('Nama Kegiatan')->searchable(),
                 TextColumn::make('director_name')->label('Penanggung Jawab')->searchable(),
+                TextColumn::make('total')->label('Total Biaya')->money('IDR')->sortable(),
             ])
             ->filters([
                 TrashedFilter::make(),
@@ -64,6 +93,21 @@ class ActivityResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /**
+     * Helper function untuk menghindari duplikasi kode.
+     * Fungsi ini akan dipanggil setiap kali field dpp, ppn, atau pph berubah.
+     */
+    public static function updateTotal(Get $get, Set $set): void
+    {
+        // Mengambil nilai dari form, dan menganggapnya 0 jika kosong
+        $dpp = floatval($get('dpp'));
+        $ppn = floatval($get('ppn'));
+        $pph = floatval($get('pph'));
+
+        // Mengatur nilai 'total' berdasarkan hasil penjumlahan
+        $set('total', $dpp + $ppn + $pph);
     }
 
     public static function getPages(): array

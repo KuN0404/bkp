@@ -18,7 +18,7 @@ class School extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'subdistric_id', // <-- TAMBAHKAN BARIS INI
+        'subdistrict_id', // <-- TAMBAHKAN BARIS INI
         'school_name',
         'principal_name',
         'principal_nip',
@@ -28,7 +28,7 @@ class School extends Model
 
     public function subdistrict(): BelongsTo
     {
-        return $this->belongsTo(Subdistrict::class, 'subdistric_id');
+        return $this->belongsTo(Subdistrict::class, 'subdistrict_id');
     }
 
     public function cashProofOfExpenditures(): HasMany

@@ -3,245 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BKP - {{ $bkp->school->school_name }}</title>
+    <title>BKP - {{ $bkp->school->school_name ?? 'Nama Sekolah' }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
             font-family: 'Times New Roman', Times, serif;
             font-size: 12pt;
+            background-color: #f8f9fa;
         }
 
         .bkp-container {
-            border: 2px solid black;
+            border: 1px solid black;
             max-width: 800px;
             margin: 20px auto;
+            background-color: white;
+            padding: 0;
         }
 
         .bkp-header {
             text-align: center;
-            border-bottom: 1px solid black;
-            padding: 15px;
+            padding: 7px 20px 0 20px;
         }
 
-        .bkp-header h4 {
-            text-decoration: underline;
+        .bkp-header h5 {
             font-weight: bold;
-            margin: 0;
+            margin-bottom: 0.5rem;
+        }
+
+        .bkp-content-padded {
+            padding: 0.5px 20px;
         }
 
         .info-table td {
             border: none !important;
-            padding: 2px 5px;
+            padding: 1px 5px;
             vertical-align: top;
         }
 
         .amount-input {
-            border: none;
-            border-bottom: 2px solid black;
+            border: 1px solid black;
             background: transparent;
             text-align: center;
             font-weight: bold;
-            font-size: 14pt;
-        }
-
-        .signature-section {
-            border-top: 1px solid black;
-            border-bottom: 1px solid black;
         }
 
         .signature-col {
-            border-right: 1px solid black;
-            min-height: 180px;
-            padding: 15px 10px;
+            min-height: 50px;
+            padding: 5px 5px;
         }
 
-        .signature-col:last-child {
-            border-right: none;
+
+        .p-0-forced {
+            padding: 0 !important;
+            vertical-align: top;
         }
 
-        .signature-name {
-            text-decoration: underline;
-            font-weight: bold;
+        .table-content-bottom {
+            height: 100%;
+            margin-bottom: 0 !important;
         }
 
-        .detail-table {
-            border: 1px solid black;
-        }
-
-        .detail-table th,
-        .detail-table td {
-            border: 1px solid black !important;
+        .table-content-bottom th {
             text-align: center;
             vertical-align: middle;
-            padding: 8px 5px;
+            padding: 2px 5px;
+            line-height: 1.2;
+            font-weight: normal;
         }
 
-        .detail-table td:nth-child(3) {
-            text-align: left;
+        .table-content-bottom td {
+            text-align: center;
+            vertical-align: middle;
+            /* Padding vertikal (atas-bawah) dikurangi */
+            padding: 1px 5px;
+            line-height: 1.3;
         }
 
-        .detail-table td:nth-child(4) {
-            text-align: right;
-        }
-
-        .tax-total-section {
-            border-left: 1px solid black;
-        }
-
-        .tax-input {
-            border: none;
+        .table-content-bottom thead {
             border-bottom: 1px solid black;
-            background: transparent;
-            text-align: right;
-            width: 100%;
         }
 
-        .total-border {
-            border-top: 2px solid black;
-            font-weight: bold;
-            font-size: 14pt;
+        /* Properti height dihapus agar tinggi baris tidak dipaksa menjadi 35px */
+        .table-content-bottom tbody td {
+            /* height: 35px; */
         }
 
         @media print {
-            body { margin: 0; padding: 0; }
-            .bkp-container { margin: 10px auto; }
+            body { margin: 0; padding: 0; background-color: white;}
+            .bkp-container { margin: 0 auto; border: 1px solid black; max-width: 100%;}
         }
     </style>
 </head>
 <body onload="window.print()">
-    <div class="container-fluid">
-        <div class="bkp-container">
-            <!-- Header -->
-            <div class="bkp-header">
-                <h4>BUKTI KAS PENGELUARAN (BKP)</h4>
+    <div class="bkp-container">
+        <div class="bkp-header">
+            <h5>PEMERINTAH KABUPATEN LAMPUNG UTARA</h5>
+            <h5 class="text-decoration-underline">BUKTI KAS PENGELUARAN (BKP)</h5>
+            <p class="mt-3">Nomor : ........................................</p>
+        </div>
+
+        <div class="bkp-content-padded">
+            <table class="table info-table mb-3">
+                <tr>
+                    <td style="width: 240px;">Telah diterima dari bendaharawan</td>
+                    <td style="width: 20px;">:</td>
+                    <td class="fw-bold">{{ $bkp->school->school_name ?? '' }}</td>
+                </tr>
+                <tr>
+                    <td>Uang Sebesar</td>
+                    <td>:</td>
+                    <td class="fw-bold fst-italic" style=" border: 1px solid black !important; padding: 4px 8px !important;">{{ $bkp->sorted ?? 'Nol Rupiah' }}</td>
+                </tr>
+                <tr>
+                    <td>Untuk Pembayaran</td>
+                    <td>:</td>
+                    <td>
+                        {{ $bkp->activity->activity_name ?? '' }}
+                    </td>
+                </tr>
+            </table>
+
+            <div class="row mb-3 ms-2">
+                <div class="col-4 d-flex align-items-center amount-input">
+                    <span class="me-2 fs-5 fw-bold">Rp.</span>
+                    <input type="text" class="form-control fw-bold flex-fill fs-5"
+                           value="{{ number_format($bkp->nominal ?? 0, 0, ',', '.') }},-"
+                           style="border: none; background: transparent; box-shadow: none;"
+                           readonly>
+                </div>
             </div>
 
-            <!-- Content -->
-            <div class="p-3">
-                <!-- Info Section -->
-                <table class="table info-table mb-4">
-                    <tr>
-                        <td style="width: 200px;">Telah diterima dari bendaharawan</td>
-                        <td style="width: 20px;">:</td>
-                        <td class="fw-bold">Sekolah</td>
-                    </tr>
-                    <tr>
-                        <td>Uang Sebesar</td>
-                        <td>:</td>
-                        <td class="fw-bold">{{ $bkp->amount_in_words ?? 'Satu Juta Dua Ratus Tujuh Ribu Rupiah' }}</td>
-                    </tr>
-                    <tr>
-                        <td>Untuk Pembayaran</td>
-                        <td>:</td>
-                        <td class="fw-bold">
-                            {{ $bkp->description ?? 'Penggandaan Soal Penilaian Akhir Semester (PAS) Genap' }}<br>
-                            T.A. {{ $bkp->fiscal_year ?? date('Y') }}/{{ $bkp->fiscal_year ? $bkp->fiscal_year + 1 : date('Y') + 1 }}
-                        </td>
-                    </tr>
-                </table>
-
-                <!-- Amount Section -->
-                <div class="row mb-4">
-                    <div class="col-12 d-flex align-items-center">
-                        <span class="me-2 fs-5">Rp.</span>
-                        <input type="text" class="form-control amount-input flex-fill"
-                               value="{{ number_format($bkp->amount ?? 1207000, 0, ',', '.') }}" readonly>
-                    </div>
+            <div class="row text-center">
+                <div class="col-4 signature-col">
+                    <div class="mb-2">Mengetahui dan Menyetujui</div>
+                    <div class="fw-bold mb-4">Kepala Sekolah</div>
+                    <div style="height: 40px;"></div>
+                    <div class="fw-bold text-decoration-underline text-uppercase">{{ $bkp->school->principal_name ?? '................................' }}</div>
+                    <div class="small">NIP: {{ $bkp->school->principal_nip ?? '' }}</div>
                 </div>
-
-                <!-- Signatures Section -->
-                <div class="row signature-section mb-3">
-                    <div class="col-4 signature-col text-center">
-                        <div class="mb-2">Mengetahui dan Menyetujui</div>
-                        <div class="fw-bold mb-4">Kepala Sekolah</div>
-                        <div style="height: 60px;"></div>
-                        <div class="signature-name mb-1">{{ $bkp->school->principal_name ?? 'Nama' }}</div>
-                        <div class="small">NIP: {{ $bkp->school->principal_nip ?? '123456789876545678990' }}</div>
-                        <div class="mt-3 small fst-italic">Barang tsb telah diterima dengan baik</div>
-                    </div>
-                    <div class="col-4 signature-col text-center">
-                        <div class="mb-2">Dibayar tanggal ........................</div>
-                        <div class="fw-bold mb-4">Bendahara Sekolah</div>
-                        <div style="height: 60px;"></div>
-                        <div class="signature-name mb-1">{{ $bkp->school->treasurer_name ?? 'Nama' }}</div>
-                        <div class="small">NIP: {{ $bkp->school->treasurer_nip ?? '123456789876545678990' }}</div>
-                        <div class="mt-3 small fst-italic">Telah yang dipungut</div>
-                    </div>
-                    <div class="col-4 signature-col text-center">
-                        <div class="mb-2">Kotabumi, {{ \Carbon\Carbon::parse($bkp->date ?? now())->translatedFormat('d F Y') }}</div>
-                        <div class="fw-bold mb-4">Penerima</div>
-                        <div style="height: 60px;"></div>
-                        <div class="signature-name mb-1">{{ $bkp->recipient_name ?? '................................' }}</div>
-                        <div class="small">&nbsp;</div>
-                        <div class="mt-3 small fst-italic">Penerimaan Terhadap Belanja</div>
-                    </div>
+                <div class="col-4 signature-col">
+                    <div class="mb-2">Dibayar tanggal, .......................</div>
+                    <div class="fw-bold mb-4">Bendahara Sekolah</div>
+                    <div style="height: 40px;"></div>
+                    <div class="fw-bold text-decoration-underline text-uppercase">{{ $bkp->school->treasurer_name ?? '................................' }}</div>
+                    <div class="small">NIP: {{ $bkp->school->treasurer_nip ?? '' }}</div>
                 </div>
-
-                <!-- Details Table -->
-                <div class="row">
-                    <div class="col-8">
-                        <table class="table detail-table mb-0">
-                            <thead>
-                                <tr>
-                                    <th style="width: 8%;">No.</th>
-                                    <th style="width: 25%;">Kode Rekening</th>
-                                    <th style="width: 45%;">Uraian</th>
-                                    <th style="width: 22%;">Jumlah Rupiah</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if(isset($bkp->details) && $bkp->details->count() > 0)
-                                    @foreach($bkp->details as $index => $detail)
-                                    <tr>
-                                        <td>{{ $index + 1 }}</td>
-                                        <td>{{ $detail->account_code ?? '' }}</td>
-                                        <td>{{ $detail->description ?? '' }}</td>
-                                        <td>Rp. {{ number_format($detail->amount ?? 0, 0, ',', '.') }}</td>
-                                    </tr>
-                                    @endforeach
-                                    @for($i = $bkp->details->count(); $i < 5; $i++)
-                                    <tr style="height: 40px;">
-                                        <td>&nbsp;</td>
-                                        <td>&nbsp;</td>
-                                        <td>&nbsp;</td>
-                                        <td>&nbsp;</td>
-                                    </tr>
-                                    @endfor
-                                @else
-                                    @for($i = 0; $i < 5; $i++)
-                                    <tr style="height: 40px;">
-                                        <td>&nbsp;</td>
-                                        <td>&nbsp;</td>
-                                        <td>&nbsp;</td>
-                                        <td>&nbsp;</td>
-                                    </tr>
-                                    @endfor
-                                @endif
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Tax and Total Section -->
-                    <div class="col-4 tax-total-section p-3">
-                        <div class="mb-2 d-flex align-items-center">
-                            <span class="me-2" style="width: 40px;">PPN</span>
-                            <span class="me-2">Rp.</span>
-                            <input type="text" class="tax-input" value="{{ number_format($bkp->ppn ?? 0, 0, ',', '.') }}" readonly>
-                        </div>
-                        <div class="mb-3 d-flex align-items-center">
-                            <span class="me-2" style="width: 40px;">PPh</span>
-                            <span class="me-2">Rp.</span>
-                            <input type="text" class="tax-input" value="{{ number_format($bkp->pph ?? 0, 0, ',', '.') }}" readonly>
-                        </div>
-                        <div class="total-border pt-2 d-flex align-items-center">
-                            <span class="me-2" style="width: 40px;">Jumlah</span>
-                            <span class="me-2">Rp.</span>
-                            <div class="flex-fill text-end">{{ number_format($bkp->total_amount ?? $bkp->amount ?? 1207000, 0, ',', '.') }}</div>
-                        </div>
-                    </div>
+                <div class="col-4 signature-col">
+                    <div class="mb-2">Kotabumi, ..............................</div>
+                    <div class="fw-bold mb-4">Penerima</div>
+                    <div style="height: 40px;"></div>
+                    <div class="fw-bold text-decoration-underline text-uppercase">{{ $bkp->activity->director_name ?? '................................' }}</div>
+                    <div class="small">DIREKTUR</div>
                 </div>
             </div>
         </div>
+
+        <table class="table table-borderless mb-0">
+            <tbody>
+                <tr>
+                    <!-- Kolom 1: Diubah menggunakan Flexbox untuk tata letak yang lebih baik -->
+                    <td style="width: 25%;" class="p-0-forced border-top border-black border-end">
+                        <div style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div class="text-center" style="border-bottom: 1px solid black; padding: 4.5px 5px; line-height: 1.2; font-weight: normal;">
+                                Barang tsb telah diterima dengan baik
+                            </div>
+                            <div class="text-center" style="margin-top: 80px;">
+                                <u>...................................</u>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- Kolom 2: Diubah menggunakan Flexbox agar header sejajar dan konten di tengah -->
+                    <td style="width: 25%;" class="p-0-forced border-top border-black border-end">
+                        <div style="height: 100%; display: flex; flex-direction: column;">
+                            <!-- Header yang sejajar -->
+                            <div class="text-center" style="border-bottom: 1px solid black; padding: 14px 20px; line-height: 1.2; font-weight: normal;">
+                                Pajak yang dipungut
+                            </div>
+                            <!-- Konten Pajak -->
+                            <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; padding: 4px 5px;">
+                                <table class="table table-borderless table-sm" style="margin-bottom: 0;">
+                                    <tbody>
+                                        <tr>
+                                            <td class="text-start" style="width: 50%; padding: 1px;">PPN</td>
+                                            <td class="text-start" style="padding: 1px;">Rp. {{ number_format($bkp->total_ppn, 0, ',', '.') ?? '............' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-start" style="padding: 1px;">PPh</td>
+                                            <td class="text-start" style="padding: 1px;">Rp. {{ number_format($bkp->total_pph, 0, ',', '.') ?? '............' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-start fw-bold" style="padding: 1px;">Jumlah</td>
+                                            <td class="text-start" style="padding: 1px;">Rp. {{ number_format($bkp->total_pajak, 0, ',', '.') ?? '............' }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- Kolom 3: Tetap sama -->
+                    <td style="width: 50%;" class="p-0-forced border-top border-1 border-black">
+                        <table class="table table-content-bottom table-sm">
+                            <thead>
+                                <tr>
+                                    <th colspan="4">Pembebanan Terhadap Belanja</th>
+                                </tr>
+                                <tr>
+                                    <th class="border-end border-black" style="width: 10%;">No.</th>
+                                    <th class="border-end border-black" style="width: 25%;">Kode Rek.</th>
+                                    <th class="border-end border-black">Uraian</th>
+                                    <th style="width: 30%;">Jumlah Rupiah</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border-end border-black">&nbsp;</td>
+                                    <td class="border-end border-black">&nbsp;</td>
+                                    <td class="border-end border-black">&nbsp;</td>
+                                    <td class="text-start border-black">Rp.</td>
+                                </tr>
+                                <tr>
+                                    <td class="border-end border-black">&nbsp;</td>
+                                    <td class="border-end border-black">&nbsp;</td>
+                                    <td class="border-end border-black">&nbsp;</td>
+                                    <td class="text-start border-black">Rp.</td>
+                                </tr>
+                                <tr>
+                                    <td class="border-end border-black">&nbsp;</td>
+                                    <td class="border-end border-black">&nbsp;</td>
+                                    <td class="border-end border-black">&nbsp;</td>
+                                    <td class="text-start border-black">Rp.</td>
+                                </tr>
+                                <tr>
+                                    <td class="border-end border-black">&nbsp;</td>
+                                    <td class="border-end border-black">&nbsp;</td>
+                                    <td class="border-end border-black">&nbsp;</td>
+                                    <td class="text-start border-black">Rp.</td>
+                                </tr>
+                                 <tr>
+                                    <td class="border-end border-bottom-0 border-black">&nbsp;</td>
+                                    <td class="border-end border-bottom-0 border-black">&nbsp;</td>
+                                    <td class="border-end border-bottom-0 border-black">&nbsp;</td>
+                                    <td class="text-start">Rp.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
