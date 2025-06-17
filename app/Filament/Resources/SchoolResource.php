@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Models\School;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Select;
 use Filament\Tables\Actions\EditAction;
@@ -14,6 +15,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
+use Filament\Infolists\Components\ViewEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
 use App\Filament\Resources\SchoolResource\Pages;
@@ -42,10 +45,27 @@ class SchoolResource extends Resource
                     ->searchable()
                     ->preload()
                     ->required(),
+                Select::make('school_type')
+                    ->options([
+                        'SD' => 'Sekolah Dasar (SD)',
+                        'SMP' => 'Sekolah Menengah Pertama (SMP)',
+                        'SMA' => 'Sekolah Menengah Atas (SMA)',])
+                    ->label('Tingkat Sekolah')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+                Select::make('school_status')
+                    ->options([
+                        'Negeri' => 'Negeri',
+                        'Swasta' => 'Swasta',])
+                    ->label('Jenis Sekolah')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
                 TextInput::make('school_name')->label('Nama Sekolah')->required(),
-                TextInput::make('principal_name')->label('Nama Kepala Sekolah')->required(),
+                TextInput::make('principal_name')->label('Nama Kepala Sekolah')->nullable(),
                 TextInput::make('principal_nip')->label('NIP Kepala Sekolah')->nullable(),
-                TextInput::make('treasurer_name')->label('Nama Bendahara')->required(),
+                TextInput::make('treasurer_name')->label('Nama Bendahara')->nullable(),
                 TextInput::make('treasurer_nip')->label('NIP Bendahara')->nullable(),
             ]);
     }
@@ -54,8 +74,10 @@ class SchoolResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('school_name')->label('Nama Sekolah')->searchable()->sortable(),
                 TextColumn::make('subdistrict.subdistrict_name')->label('Kecamatan')->sortable(),
+                TextColumn::make('school_type')->label('Tingkat Sekolah')->searchable()->sortable(),
+                TextColumn::make('school_status')->label('Status Sekolah')->searchable()->sortable(),
+                TextColumn::make('school_name')->label('Nama Sekolah')->searchable()->sortable(),
                 TextColumn::make('principal_name')->label('Kepala Sekolah')->searchable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('treasurer_name')->label('Bendahara')->searchable()->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -72,6 +94,33 @@ class SchoolResource extends Resource
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                TextEntry::make('subdistrict.subdistrict_name')
+                ->label('Kecamatan'),
+                TextEntry::make('school_type')
+                ->label('Tingkat Sekolah'),
+                TextEntry::make('school_status')
+                ->label('Status Sekolah'),
+                TextEntry::make('school_name')
+                ->label('Sekolah'),
+                ViewEntry::make('principal_name')
+                ->label('Kepala Sekolah')
+                ->view('display-or-dash'),
+                ViewEntry::make('principal_nip')
+                ->label('NIP Kepala Sekolah')
+                ->view('display-or-dash'),
+                ViewEntry::make('treasurer_name')
+                ->label('Bendahara')
+                ->view('display-or-dash'),
+                ViewEntry::make('treasurer_nip')
+                ->label('NIP Bendahara')
+                ->view('display-or-dash'),
             ]);
     }
 

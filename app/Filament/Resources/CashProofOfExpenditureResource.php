@@ -2,32 +2,33 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\CashProofOfExpenditureResource\Pages;
-use App\Models\Activity;
-use App\Models\CashProofOfExpenditure;
 use App\Models\School;
-use App\Models\Subdistrict;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Infolists\Components\TextEntry;
+use App\Models\Activity;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
+use App\Models\Subdistrict;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
+use Illuminate\Support\Collection;
 use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
+use Filament\Forms\Components\Select;
+use App\Models\CashProofOfExpenditure;
+use Illuminate\Support\Facades\Config;
+use Filament\Forms\Components\Textarea;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Components\TextInput;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
-use Filament\Tables\Table;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Config;
 use Riskihajar\Terbilang\Facades\Terbilang;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+use App\Filament\Resources\CashProofOfExpenditureResource\Pages;
 
 class CashProofOfExpenditureResource extends Resource
 {
@@ -67,14 +68,43 @@ class CashProofOfExpenditureResource extends Resource
                     ->required()
                     ->disabled(fn (Get $get): bool => !$get('subdistrict_id')), // Nonaktif jika kecamatan belum dipilih
 
-                Select::make('activity_id')
-                    ->relationship('activity', 'activity_name')
-                    ->label('Kegiatan')
-                    ->searchable()
-                    ->preload()
+                Select::make('activity_type')
+                    ->label('Pilih Tipe Kegiatan')
+                    ->options(Activity::all()->pluck('activity_type', 'activity_type'))
                     ->live()
-                    ->afterStateUpdated(fn (Get $get, Set $set) => self::updateNominalAndSorted($get, $set))
+                    ->searchable()
+                    ->afterStateUpdated(fn (Set $set) => $set('activity_id', null))
+                    ->dehydrated(false) // Field ini tidak disimpan ke database, hanya sebagai helper
                     ->required(),
+
+                Select::make('activity_id')
+                    ->label('Nama Kegiatan')
+                    ->options(function (Get $get): Collection {
+                        // Hanya tampilkan sekolah berdasarkan kecamatan yang dipilih
+                        if (!$get('activity_type')) {
+                            return collect();
+                        }
+                        return Activity::query()
+                            ->where('activity_type', $get('activity_type'))
+                            ->pluck('activity_name', 'id');
+                    })
+                    ->searchable()
+                    ->live()
+                    ->required()
+                    ->disabled(fn (Get $get): bool => !$get('activity_type')) // Nonaktif jika kecamatan belum dipilih
+                    ->afterStateUpdated(function ($state, Set $set) {
+                        // Ambil data activity berdasarkan id yang dipilih
+                        $activity = Activity::find($state);
+                        // Isi field 'director_name' dengan data dari activity
+                        // Jika activity tidak ditemukan (misal, pilihan dikosongkan), isi dengan null.
+                        $set('director_name', $activity?->director_name);
+                    })
+                    ->required(),
+
+                    TextInput::make('director_name') // <-- Gunakan nama simpel, bukan relasi
+                    ->label('Nama Direktur')
+                    ->readOnly() // <-- Benar, hanya untuk dibaca
+                    ->dehydrated(false), // <-- Benar, tidak perlu disimpan ke database
 
                 TextInput::make('number_of_students')
                     ->label('Jumlah Siswa')
@@ -120,7 +150,15 @@ class CashProofOfExpenditureResource extends Resource
             ->schema([
                 TextEntry::make('school.subdistrict.subdistrict_name')->label('Kecamatan'),
                 TextEntry::make('school.school_name')->label('Sekolah'),
+                ViewEntry::make('school.principal_name')
+                ->label('Nama Kepala Sekolah')
+                ->view('display-or-dash'),
+                ViewEntry::make('school.treasurer_name')
+                ->label('Nama Bendahara')
+                ->view('display-or-dash'),
+                TextEntry::make('activity.activity_type')->label('Tipe Kegiatan'),
                 TextEntry::make('activity.activity_name')->label('Kegiatan'),
+                TextEntry::make('activity.director_name')->label('Nama Direktur'),
                 TextEntry::make('number_of_students')->label('Jumlah Siswa'),
                 TextEntry::make('total_dpp')
                     ->label('Total DPP')
@@ -147,7 +185,6 @@ class CashProofOfExpenditureResource extends Resource
                 TextEntry::make('sorted')->label('Terbilang'),
             ]);
     }
-
 
     /**
      * Helper function untuk menghitung Nominal dan Terbilang secara otomatis.

@@ -107,7 +107,13 @@
                 <tr>
                     <td style="width: 240px;">Telah diterima dari bendaharawan</td>
                     <td style="width: 20px;">:</td>
-                    <td class="fw-bold">{{ $bkp->school->school_name ?? '' }}</td>
+                    <td class="fw-bold">
+                        {{ $bkp->school->school_type ?? '' }}@if($bkp->school->school_status == 'Negeri')N
+                        @else
+S
+                        @endif
+                        {{ $bkp->school->school_name ?? '' }}
+                    </td>
                 </tr>
                 <tr>
                     <td>Uang Sebesar</td>
@@ -138,21 +144,21 @@
                     <div class="mb-2">Mengetahui dan Menyetujui</div>
                     <div class="fw-bold mb-4">Kepala Sekolah</div>
                     <div style="height: 40px;"></div>
-                    <div class="fw-bold text-decoration-underline text-uppercase">{{ $bkp->school->principal_name ?? '................................' }}</div>
-                    <div class="small">NIP: {{ $bkp->school->principal_nip ?? '' }}</div>
+                    <div class="fw-bold text-decoration-underline text-uppercase">{{ $bkp->school->principal_name ?? '..........................................' }}</div>
+                    <div class="small">NIP: {{ $bkp->school->principal_nip ?? '..........................................' }}</div>
                 </div>
                 <div class="col-4 signature-col">
                     <div class="mb-2">Dibayar tanggal, .......................</div>
                     <div class="fw-bold mb-4">Bendahara Sekolah</div>
                     <div style="height: 40px;"></div>
-                    <div class="fw-bold text-decoration-underline text-uppercase">{{ $bkp->school->treasurer_name ?? '................................' }}</div>
-                    <div class="small">NIP: {{ $bkp->school->treasurer_nip ?? '' }}</div>
+                    <div class="fw-bold text-decoration-underline text-uppercase">{{ $bkp->school->treasurer_name ?? '..........................................' }}</div>
+                    <div class="small">NIP: {{ $bkp->school->treasurer_nip ?? '..........................................' }}</div>
                 </div>
                 <div class="col-4 signature-col">
                     <div class="mb-2">Kotabumi, ..............................</div>
                     <div class="fw-bold mb-4">Penerima</div>
                     <div style="height: 40px;"></div>
-                    <div class="fw-bold text-decoration-underline text-uppercase">{{ $bkp->activity->director_name ?? '................................' }}</div>
+                    <div class="fw-bold text-decoration-underline text-uppercase">{{ $bkp->activity->director_name ?? '..........................................' }}</div>
                     <div class="small">DIREKTUR</div>
                 </div>
             </div>

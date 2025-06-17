@@ -14,13 +14,15 @@ return new class extends Migration
         Schema::create('schools', function (Blueprint $table) {
             $table->id();
             $table->foreignId('subdistrict_id')->constrained('subdistricts');
+            $table->enum('school_type', ['SD', 'SMP', 'SMA']);
+            $table->enum('school_status', ['Negeri', 'Swasta']);
             $table->string('school_name');
-            $table->string('principal_name');
+            $table->string('principal_name')->nullable();
             $table->string('principal_nip')->nullable();
-            $table->string('treasurer_name');
+            $table->string('treasurer_name')->nullable();
             $table->string('treasurer_nip')->nullable();
             $table->timestamps();
-            $table->softDeletes()->nullable();
+            $table->softDeletes();
         });
     }
 

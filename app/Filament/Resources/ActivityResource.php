@@ -8,6 +8,7 @@ use App\Models\Activity;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
+use Filament\Forms\Components\Select;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
@@ -35,6 +36,16 @@ class ActivityResource extends Resource
     {
         return $form
             ->schema([
+                Select::make('activity_type')
+                    ->label('Pilih Tingkat Kegiatan')
+                    ->options([
+                        'SD' => 'Sekolah Dasar (SD)',
+                        'SMP' => 'Sekolah Menengah Pertama (SMP)',
+                        'SMA' => 'Sekolah Menengah Atas (SMA)',
+                    ])
+                    ->default('SD') // Set default value to 'SD'
+                    ->searchable()
+                    ->required(),
                 TextInput::make('activity_name')
                     ->label('Nama Kegiatan')
                     ->required()
@@ -76,6 +87,7 @@ class ActivityResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('activity_type')->label('Tingkat Kegiatan')->searchable(),
                 TextColumn::make('activity_name')->label('Nama Kegiatan')->searchable(),
                 TextColumn::make('director_name')->label('Penanggung Jawab')->searchable(),
                 TextColumn::make('total')->label('Total Biaya')->money('IDR')->sortable(),

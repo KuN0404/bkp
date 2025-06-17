@@ -19,6 +19,8 @@ class School extends Model
      */
     protected $fillable = [
         'subdistrict_id', // <-- TAMBAHKAN BARIS INI
+        'school_type',
+        'school_status',
         'school_name',
         'principal_name',
         'principal_nip',

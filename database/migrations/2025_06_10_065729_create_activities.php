@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('activities', function (Blueprint $table) {
             $table->id();
+            $table->enum('activity_type',['SD', 'SMP', 'SMA']);
             $table->string('activity_name');
             $table->decimal('dpp', 8, 2)->default(0.00);
             $table->decimal('ppn', 8, 2)->default(0.00);
@@ -20,7 +21,7 @@ return new class extends Migration
             $table->decimal('total', 8, 2)->default(0.00);
             $table->string('director_name');
             $table->timestamps();
-            $table->softDeletes()->nullable();
+            $table->softDeletes();
         });
     }
 
