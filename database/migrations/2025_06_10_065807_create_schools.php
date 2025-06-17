@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('treasurer_name')->nullable();
             $table->string('treasurer_nip')->nullable();
             $table->timestamps();
-            $table->softDeletes();
+            $table->softDeletes()->nullable();
         });
     }
 

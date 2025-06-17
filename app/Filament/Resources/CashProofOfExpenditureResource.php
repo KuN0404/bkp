@@ -21,6 +21,8 @@ use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Riskihajar\Terbilang\Facades\Terbilang;
@@ -221,18 +223,76 @@ class CashProofOfExpenditureResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('school.school_name')->label('Sekolah')->searchable()->sortable(),
-                TextColumn::make('school.subdistrict.subdistrict_name')->label('Kecamatan')->searchable()->sortable(),
-                TextColumn::make('activity.activity_name')->label('Kegiatan')->searchable(),
-                TextColumn::make('nominal')->money('IDR')->sortable(),
-                TextColumn::make('created_at')->label('Tanggal Dibuat')->dateTime('d-M-Y')->sortable(),
+                TextColumn::make('school.school_type')
+                ->label('Tingkat Sekolah')
+                ->searchable()
+                ->sortable(),
+                TextColumn::make('school.subdistrict.subdistrict_name')
+                ->label('Kecamatan')
+                ->searchable()
+                ->sortable(),
+                TextColumn::make('school.school_name')
+                ->label('Sekolah')
+                ->searchable()
+                ->sortable(),
+                TextColumn::make('activity.activity_name')
+                ->label('Kegiatan')
+                ->toggleable(isToggledHiddenByDefault: true)
+                ->searchable(),
+                TextColumn::make('nominal')
+                ->money('IDR')
+                ->sortable(),
+                TextColumn::make('deleted_at')
+                ->label('Status')
+                ->state(function (CashProofOfExpenditure $record): string {
+                    if ($record->deleted_at === null) {
+                        return 'Aktif';
+                    } else {
+                        return 'Tidak Aktif';
+                    }
+                })
+                ->color(function (CashProofOfExpenditure $record): string {
+                    if ($record->deleted_at === null) {
+                        return 'success'; // Green for active records
+                    } else {
+                        return 'danger'; // Red for deleted records
+                    }
+                })
+                ->icon(function (CashProofOfExpenditure $record): ?string {
+                    if ($record->deleted_at === null) {
+                        return 'heroicon-o-check-circle'; // Icon for active records
+                    } else {
+                        return 'heroicon-o-x-circle'; // Icon for deleted records
+                    }
+                })
+                ->badge()
+                ->sortable(),
+                TextColumn::make('created_at')
+                ->label('Tanggal Dibuat')
+                ->dateTime('d-M-Y')
+                ->sortable(),
             ])
             ->filters([
                 TrashedFilter::make(),
-                SelectFilter::make('school')->relationship('school', 'school_name'),
-                SelectFilter::make('activity')->relationship('activity', 'activity_name'),
+                SelectFilter::make('school')
+                ->label('Tingkat Sekolah')
+                ->relationship('school', 'school_type')
+                ->searchable(),
+                SelectFilter::make('school.subdistrict.subdistrict_name')
+                ->label('Kecamatan')
+                ->relationship('school.subdistrict', 'subdistrict_name')
+                ->searchable(),
+                SelectFilter::make('school')
+                ->label('Sekolah')
+                ->relationship('school', 'school_name')
+                ->searchable(),
+                SelectFilter::make('activity')
+                ->label('Kegiatan')
+                ->relationship('activity', 'activity_name')
+                ->searchable(),
             ])
             ->actions([
+                ActionGroup::make([
                 ViewAction::make(),
                 EditAction::make(),
                 Action::make('print')
@@ -241,6 +301,21 @@ class CashProofOfExpenditureResource extends Resource
                     ->color('info')
                     ->url(fn (CashProofOfExpenditure $record): string => route('bkp.print', $record))
                     ->openUrlInNewTab(),
+                DeleteAction::make()
+                    ->label('Hapus'),
+                Action::make('restore')
+                    ->label('Pulihkan')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(function (CashProofOfExpenditure $record) {
+                        $record->restore();
+                    })
+                    ->hidden(fn (CashProofOfExpenditure $record) => $record->deleted_at === null),
+                    ])
+                ->dropdown()
+                ->label('Aksi')
+                ->icon('heroicon-o-ellipsis-horizontal')
             ])
             ->bulkActions([
                 BulkActionGroup::make([

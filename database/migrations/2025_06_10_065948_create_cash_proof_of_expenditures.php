@@ -19,7 +19,7 @@ return new class extends Migration
             $table->decimal('nominal', 15, 2)->default(0.00); // <-- TAMBAHKAN KOLOM INI
             $table->text('sorted');
             $table->timestamps();
-            $table->softDeletes(); // ->nullable() tidak diperlukan
+            $table->softDeletes()->nullable();
         });
     }
 

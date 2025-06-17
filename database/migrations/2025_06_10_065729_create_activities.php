@@ -21,7 +21,7 @@ return new class extends Migration
             $table->decimal('total', 8, 2)->default(0.00);
             $table->string('director_name');
             $table->timestamps();
-            $table->softDeletes();
+            $table->softDeletes()->nullable();
         });
     }
 

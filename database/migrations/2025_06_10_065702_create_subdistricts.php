@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('subdistrict_name');
             $table->timestamps();
-            $table->softDeletes();
+            $table->softDeletes()->nullable();
         });
     }
 
