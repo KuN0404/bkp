@@ -24,6 +24,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Filters\TrashedFilter;
 use Riskihajar\Terbilang\Facades\Terbilang;
 use Filament\Infolists\Components\TextEntry;
@@ -40,73 +41,81 @@ class CashProofOfExpenditureResource extends Resource
     protected static ?string $modelLabel = 'Bukti Kas Pengeluaran';
     protected static ?string $pluralModelLabel = 'Daftar BKP';
 
+   public static function getEloquentQuery(): Builder
+    {
+        // PERBAIKAN: Eager load relasi dengan path yang benar dan konsisten
+        return parent::getEloquentQuery()->with([
+            'schoolWithTrashed.subdistrictWithTrashed', // Memuat subdistrict melalui schoolWithTrashed
+            'activityWithTrashed',
+        ]);
+    }
 
     public static function form(Form $form): Form
     {
+        // Bagian form Anda sudah cukup baik dalam menangani soft delete
+        // karena menggunakan kueri langsung dengan withTrashed().
+        // Jadi, tidak ada perubahan besar di sini.
         return $form
             ->schema([
                 Select::make('subdistrict_id')
                     ->label('Pilih Kecamatan')
-                    ->options(Subdistrict::all()->pluck('subdistrict_name', 'id'))
+                    ->options(Subdistrict::query()->withTrashed()->pluck('subdistrict_name', 'id'))
                     ->live()
                     ->searchable()
                     ->afterStateUpdated(fn (Set $set) => $set('school_id', null))
-                    ->dehydrated(false) // Field ini tidak disimpan ke database, hanya sebagai helper
+                    ->dehydrated(false)
                     ->required(),
 
                 Select::make('school_id')
                     ->label('Sekolah')
                     ->options(function (Get $get): Collection {
-                        // Hanya tampilkan sekolah berdasarkan kecamatan yang dipilih
                         if (!$get('subdistrict_id')) {
                             return collect();
                         }
                         return School::query()
                             ->where('subdistrict_id', $get('subdistrict_id'))
+                            ->withTrashed()
                             ->pluck('school_name', 'id');
                     })
                     ->searchable()
                     ->live()
                     ->required()
-                    ->disabled(fn (Get $get): bool => !$get('subdistrict_id')), // Nonaktif jika kecamatan belum dipilih
+                    ->disabled(fn (Get $get): bool => !$get('subdistrict_id')),
 
                 Select::make('activity_type')
                     ->label('Pilih Tipe Kegiatan')
-                    ->options(Activity::all()->pluck('activity_type', 'activity_type'))
+                    ->options(Activity::query()->withTrashed()->distinct()->pluck('activity_type', 'activity_type'))
                     ->live()
                     ->searchable()
                     ->afterStateUpdated(fn (Set $set) => $set('activity_id', null))
-                    ->dehydrated(false) // Field ini tidak disimpan ke database, hanya sebagai helper
+                    ->dehydrated(false)
                     ->required(),
 
                 Select::make('activity_id')
                     ->label('Nama Kegiatan')
                     ->options(function (Get $get): Collection {
-                        // Hanya tampilkan sekolah berdasarkan kecamatan yang dipilih
                         if (!$get('activity_type')) {
                             return collect();
                         }
                         return Activity::query()
                             ->where('activity_type', $get('activity_type'))
+                            ->withTrashed()
                             ->pluck('activity_name', 'id');
                     })
                     ->searchable()
                     ->live()
                     ->required()
-                    ->disabled(fn (Get $get): bool => !$get('activity_type')) // Nonaktif jika kecamatan belum dipilih
+                    ->disabled(fn (Get $get): bool => !$get('activity_type'))
                     ->afterStateUpdated(function ($state, Set $set) {
-                        // Ambil data activity berdasarkan id yang dipilih
-                        $activity = Activity::find($state);
-                        // Isi field 'director_name' dengan data dari activity
-                        // Jika activity tidak ditemukan (misal, pilihan dikosongkan), isi dengan null.
+                        $activity = Activity::withTrashed()->find($state);
                         $set('director_name', $activity?->director_name);
                     })
                     ->required(),
 
-                    TextInput::make('director_name') // <-- Gunakan nama simpel, bukan relasi
+                TextInput::make('director_name')
                     ->label('Nama Direktur')
-                    ->readOnly() // <-- Benar, hanya untuk dibaca
-                    ->dehydrated(false), // <-- Benar, tidak perlu disimpan ke database
+                    ->readOnly()
+                    ->dehydrated(false),
 
                 TextInput::make('number_of_students')
                     ->label('Jumlah Siswa')
@@ -118,12 +127,12 @@ class CashProofOfExpenditureResource extends Resource
                 TextInput::make('nominal')
                     ->numeric()
                     ->prefix('Rp')
-                    ->readOnly() // <-- Dibuat read-only
+                    ->readOnly()
                     ->required(),
 
                 Textarea::make('sorted')
                     ->label('Terbilang')
-                    ->readOnly() // <-- Dibuat read-only
+                    ->readOnly()
                     ->required(),
             ]);
     }
@@ -132,62 +141,94 @@ class CashProofOfExpenditureResource extends Resource
      * Menyiapkan data sebelum form diisi (untuk halaman Edit dan View).
      * Ini akan memastikan dropdown Kecamatan dan Sekolah menampilkan data yang benar.
      */
-    public static function mutateFormDataBeforeFill(array $data): array
+   public static function mutateFormDataBeforeFill(array $data): array
     {
+        // Menggunakan find() pada model utama akan otomatis menangani data yang soft-deleted juga
         $record = CashProofOfExpenditure::find($data['id']);
         if ($record) {
-            // Mengisi dropdown kecamatan helper berdasarkan data sekolah yang ada
-            $data['subdistrict_id'] = $record->school?->subdistrict_id;
+            // PERBAIKAN: Gunakan schoolWithTrashed untuk konsistensi
+            $data['subdistrict_id'] = $record->schoolWithTrashed?->subdistrict_id;
+            $data['activity_type'] = $record->activityWithTrashed?->activity_type;
+            $data['director_name'] = $record->activityWithTrashed?->director_name;
         }
-
         return $data;
     }
 
     /**
      * Mendefinisikan layout untuk halaman View.
      */
-    public static function infolist(Infolist $infolist): Infolist
+   public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist
             ->schema([
-                TextEntry::make('school.subdistrict.subdistrict_name')->label('Kecamatan'),
-                TextEntry::make('school.school_name')->label('Sekolah'),
-                ViewEntry::make('school.principal_name')
-                ->label('Nama Kepala Sekolah')
-                ->view('display-or-dash'),
-                ViewEntry::make('school.treasurer_name')
-                ->label('Nama Bendahara')
-                ->view('display-or-dash'),
-                TextEntry::make('activity.activity_type')->label('Tipe Kegiatan'),
-                TextEntry::make('activity.activity_name')->label('Kegiatan'),
-                TextEntry::make('activity.director_name')->label('Nama Direktur'),
+                // PERBAIKAN: Path relasi yang benar
+             TextEntry::make('schoolWithTrashed.school_type')
+                ->label('Tingkat Sekolah')
+                ->badge()
+                ->color(function (CashProofOfExpenditure $record): string {
+                        if ($record->school_type == "SD") {
+                            return 'danger';
+                        } elseif($record->school_type == "SMP") {
+                            return 'primary';
+                        }else{
+                            return 'info';
+                        }
+                    })
+                    ->icon('heroicon-o-academic-cap'),
+                TextEntry::make('schoolWithTrashed.subdistrictWithTrashed.subdistrict_name')->label('Kecamatan'),
+                TextEntry::make('schoolWithTrashed.school_name')->label('Sekolah'),
+                ViewEntry::make('schoolWithTrashed.principal_name')
+                    ->label('Nama Kepala Sekolah')
+                    ->view('display-or-dash'),
+                ViewEntry::make('schoolWithTrashed.treasurer_name')
+                    ->label('Nama Bendahara')
+                    ->view('display-or-dash'),
+                TextEntry::make('activityWithTrashed.activity_type')
+                    ->label('Tipe Kegiatan')
+                    ->badge()
+                    ->color(function (CashProofOfExpenditure $record): string {
+                            if ($record->activity_type == "SD") {
+                                return 'danger';
+                            } elseif($record->activity_type == "SMP") {
+                                return 'primary';
+                            }else{
+                                return 'info';
+                            }
+                        })
+                        ->icon('heroicon-o-academic-cap'),
+                TextEntry::make('activityWithTrashed.activity_name')->label('Kegiatan'),
+                TextEntry::make('activityWithTrashed.director_name')->label('Nama Direktur'),
                 TextEntry::make('number_of_students')->label('Jumlah Siswa'),
                 TextEntry::make('total_dpp')
                     ->label('Total DPP')
                     ->money('IDR')
                     ->state(function (CashProofOfExpenditure $record): float {
-                        // Menghitung PPN: ppn per kegiatan * jumlah siswa
-                        return ($record->activity?->dpp ?? 0) * $record->number_of_students;
+                        return ($record->activityWithTrashed?->dpp ?? 0) * $record->number_of_students;
                     }),
                 TextEntry::make('total_ppn')
                     ->label('Total PPN')
                     ->money('IDR')
                     ->state(function (CashProofOfExpenditure $record): float {
-                        // Menghitung PPN: ppn per kegiatan * jumlah siswa
-                        return ($record->activity?->ppn ?? 0) * $record->number_of_students;
+                        return ($record->activityWithTrashed?->ppn ?? 0) * $record->number_of_students;
                     }),
                 TextEntry::make('total_pph')
                     ->label('Total PPh')
                     ->money('IDR')
                     ->state(function (CashProofOfExpenditure $record): float {
-                        // Menghitung PPH: pph per kegiatan * jumlah siswa
-                        return ($record->activity?->pph ?? 0) * $record->number_of_students;
+                        return ($record->activityWithTrashed?->pph ?? 0) * $record->number_of_students;
                     }),
                 TextEntry::make('nominal')->label('Total Nominal')->money('IDR'),
                 TextEntry::make('sorted')->label('Terbilang'),
+                TextEntry::make('deleted_at')
+                    ->label('Status')
+                    ->state(function (CashProofOfExpenditure $record): string {
+                        return $record->deleted_at ? 'Tidak Aktif' : 'Aktif';
+                    })
+                    ->color(fn (string $state): string => $state === 'Aktif' ? 'success' : 'danger')
+                    ->icon(fn (string $state): string => $state === 'Aktif' ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
+                    ->badge(),
             ]);
     }
-
     /**
      * Helper function untuk menghitung Nominal dan Terbilang secara otomatis.
      */
@@ -196,81 +237,66 @@ class CashProofOfExpenditureResource extends Resource
         $activityId = $get('activity_id');
         $numberOfStudents = (int) $get('number_of_students');
 
-        // Hanya hitung jika kedua input sudah terisi
         if ($activityId && $numberOfStudents > 0) {
-            $activity = Activity::find($activityId);
+            $activity = Activity::withTrashed()->find($activityId); // <-- Pastikan withTrashed
             $activityTotal = $activity ? $activity->total : 0;
-
-            // Hitung nilai nominal
             $nominal = $activityTotal * $numberOfStudents;
-
-            // Set field 'nominal'
             $set('nominal', $nominal);
-
-            // Set field 'sorted' (terbilang)
             Config::set('terbilang.locale', 'id');
             $terbilangText = ucwords(Terbilang::make($nominal)) . ' Rupiah';
             $set('sorted', $terbilangText);
         } else {
-            // Reset jika salah satu input kosong
             $set('nominal', 0);
             $set('sorted', '');
         }
     }
 
-
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                TextColumn::make('school.school_type')
-                ->label('Tingkat Sekolah')
-                ->searchable()
-                ->sortable(),
-                TextColumn::make('school.subdistrict.subdistrict_name')
-                ->label('Kecamatan')
-                ->searchable()
-                ->sortable(),
-                TextColumn::make('school.school_name')
-                ->label('Sekolah')
-                ->searchable()
-                ->sortable(),
-                TextColumn::make('activity.activity_name')
-                ->label('Kegiatan')
-                ->toggleable(isToggledHiddenByDefault: true)
-                ->searchable(),
+                // PERBAIKAN: Path relasi yang benar
+                TextColumn::make('schoolWithTrashed.school_type')
+                    ->label('Tingkat Sekolah')
+                    ->searchable()
+                    ->sortable()
+                    ->badge()
+                    ->color(function (CashProofOfExpenditure $record): string {
+                        if ($record->activity_type == "SD") {
+                            return 'danger';
+                        } elseif($record->activity_type == "SMP") {
+                            return 'primary';
+                        }else{
+                            return 'info';
+                        }
+                    })
+                    ->icon('heroicon-o-academic-cap'),
+                TextColumn::make('schoolWithTrashed.subdistrictWithTrashed.subdistrict_name')
+                    ->label('Kecamatan')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('schoolWithTrashed.school_name')
+                    ->label('Sekolah')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('activityWithTrashed.activity_name')
+                    ->label('Kegiatan')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->searchable(),
                 TextColumn::make('nominal')
-                ->money('IDR')
-                ->sortable(),
+                    ->money('IDR')
+                    ->sortable(),
                 TextColumn::make('deleted_at')
-                ->label('Status')
-                ->state(function (CashProofOfExpenditure $record): string {
-                    if ($record->deleted_at === null) {
-                        return 'Aktif';
-                    } else {
-                        return 'Tidak Aktif';
-                    }
-                })
-                ->color(function (CashProofOfExpenditure $record): string {
-                    if ($record->deleted_at === null) {
-                        return 'success'; // Green for active records
-                    } else {
-                        return 'danger'; // Red for deleted records
-                    }
-                })
-                ->icon(function (CashProofOfExpenditure $record): ?string {
-                    if ($record->deleted_at === null) {
-                        return 'heroicon-o-check-circle'; // Icon for active records
-                    } else {
-                        return 'heroicon-o-x-circle'; // Icon for deleted records
-                    }
-                })
-                ->badge()
-                ->sortable(),
+                    ->label('Status')
+                    ->state(fn (CashProofOfExpenditure $record): string => $record->deleted_at ? 'Tidak Aktif' : 'Aktif')
+                    ->color(fn (string $state): string => $state === 'Aktif' ? 'success' : 'danger')
+                    ->icon(fn (string $state): string => $state === 'Aktif' ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
+                    ->badge()
+                    ->sortable(),
                 TextColumn::make('created_at')
-                ->label('Tanggal Dibuat')
-                ->dateTime('d-M-Y')
-                ->sortable(),
+                    ->label('Tanggal Dibuat')
+                    ->dateTime('d-M-Y')
+                    ->sortable(),
             ])
             ->filters([
                 TrashedFilter::make(),
@@ -302,7 +328,9 @@ class CashProofOfExpenditureResource extends Resource
                     ->url(fn (CashProofOfExpenditure $record): string => route('bkp.print', $record))
                     ->openUrlInNewTab(),
                 DeleteAction::make()
-                    ->label('Hapus'),
+                    ->label('Hapus')
+                    ->requiresConfirmation()
+                    ,
                 Action::make('restore')
                     ->label('Pulihkan')
                     ->icon('heroicon-o-arrow-path')

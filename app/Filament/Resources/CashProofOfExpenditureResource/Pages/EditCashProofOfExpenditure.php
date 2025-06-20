@@ -9,14 +9,21 @@ use App\Filament\Resources\CashProofOfExpenditureResource;
 
 class EditCashProofOfExpenditure extends EditRecord
 {
+
     protected static string $resource = CashProofOfExpenditureResource::class;
 
-    public function getRecord(): Model
+    /*
+     * @param int|string $key The ID from the URL.
+     */
+    public function resolveRecord(int|string $key): Model
     {
-        // This is the key change: withTrashed()
-        return $this->getResource()::getEloquentQuery()
-            ->withTrashed() // This tells Eloquent to include soft-deleted records
-            ->findOrFail($this->getRecordId());
+   // Ambil nama kelas model dari resource
+    $modelClass = $this->getResource()::getModel();
+
+    return $this->getResource()::getEloquentQuery()
+        ->withTrashed()
+        ->where((new $modelClass)->getQualifiedKeyName(), $key)
+        ->firstOrFail();
     }
     protected function getHeaderActions(): array
     {

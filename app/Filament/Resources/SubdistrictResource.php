@@ -2,19 +2,21 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\SubdistrictResource\Pages;
-use App\Models\Subdistrict;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\ViewAction;
-use Filament\Tables\Actions\DeleteAction;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use App\Models\Subdistrict;
+use Filament\Resources\Resource;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\ViewAction;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Filters\TrashedFilter;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
+use App\Filament\Resources\SubdistrictResource\Pages;
 
 class SubdistrictResource extends Resource
 {
@@ -44,8 +46,33 @@ class SubdistrictResource extends Resource
                 TextColumn::make('subdistrict_name')
                     ->label('Nama Kecamatan')
                     ->searchable(),
+                TextColumn::make('deleted_at')
+                    ->label('Status')
+                    ->state(function (Subdistrict $record): string {
+                        if ($record->deleted_at === null) {
+                            return 'Aktif';
+                        } else {
+                            return 'Tidak Aktif';
+                        }
+                    })
+                    ->color(function (Subdistrict $record): string {
+                        if ($record->deleted_at === null) {
+                            return 'success'; // Green for active records
+                        } else {
+                            return 'danger'; // Red for deleted records
+                        }
+                    })
+                    ->icon(function (Subdistrict $record): ?string {
+                        if ($record->deleted_at === null) {
+                            return 'heroicon-o-check-circle'; // Icon for active records
+                        } else {
+                            return 'heroicon-o-x-circle'; // Icon for deleted records
+                        }
+                    })
+                    ->badge(),
                 TextColumn::make('created_at')
-                    ->dateTime()
+                    ->label('Tanggal Dibuat')
+                    ->dateTime('l, d F Y - H:i:s')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -53,9 +80,27 @@ class SubdistrictResource extends Resource
                 TrashedFilter::make(),
             ])
             ->actions([
-                ViewAction::make(),
+                ActionGroup::make([
+                ViewAction::make()
+                ->slideOver(),
                 EditAction::make(),
-                DeleteAction::make(),
+                DeleteAction::make()
+                    ->label('Hapus')
+                    ->requiresConfirmation()
+                    ,
+                Action::make('restore')
+                    ->label('Pulihkan')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(function (Subdistrict $record) {
+                        $record->restore();
+                    })
+                    ->hidden(fn (Subdistrict $record) => $record->deleted_at === null),
+                    ])
+                ->dropdown()
+                ->label('Aksi')
+                ->icon('heroicon-o-ellipsis-horizontal')
             ])
             ->bulkActions([
                 BulkActionGroup::make([
@@ -69,7 +114,7 @@ class SubdistrictResource extends Resource
         return [
             'index' => Pages\ListSubdistricts::route('/'),
             'create' => Pages\CreateSubdistrict::route('/create'),
-            'view' => Pages\ViewSubdistrict::route('/{record}'),
+            // 'view' => Pages\ViewSubdistrict::route('/{record}'),
             'edit' => Pages\EditSubdistrict::route('/{record}/edit'),
         ];
     }

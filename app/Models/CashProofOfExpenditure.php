@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Casts\Attribute; // <-- PASTIKAN INI DI-IMPORT
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\School;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Database\Eloquent\Model;
 use Riskihajar\Terbilang\Facades\Terbilang;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute; // <-- PASTIKAN INI DI-IMPORT
 
 class CashProofOfExpenditure extends Model
 {
@@ -79,8 +80,18 @@ class CashProofOfExpenditure extends Model
         return $this->belongsTo(School::class);
     }
 
+    public function schoolWithTrashed(): BelongsTo
+    {
+        return $this->belongsTo(School::class, 'school_id')->withTrashed();
+    }
+
     public function activity(): BelongsTo
     {
         return $this->belongsTo(Activity::class);
+    }
+        public function activityWithTrashed()
+    {
+        // Relasi ini akan mengambil data kecamatan bahkan yang sudah di-soft-delete
+        return $this->belongsTo(Activity::class, 'activity_id')->withTrashed();
     }
 }

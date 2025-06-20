@@ -33,6 +33,12 @@ class School extends Model
         return $this->belongsTo(Subdistrict::class, 'subdistrict_id');
     }
 
+    public function subdistrictWithTrashed()
+    {
+        // Relasi ini akan mengambil data kecamatan bahkan yang sudah di-soft-delete
+        return $this->belongsTo(Subdistrict::class, 'subdistrict_id')->withTrashed();
+    }
+
     public function cashProofOfExpenditures(): HasMany
     {
         return $this->hasMany(CashProofOfExpenditure::class);
