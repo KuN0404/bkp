@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\CashProofOfExpenditureResource\Pages;
 
 use Filament\Actions;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\RestoreAction;
+use App\Models\CashProofOfExpenditure;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\ViewRecord;
 use App\Filament\Resources\CashProofOfExpenditureResource;
@@ -35,10 +37,16 @@ class ViewCashProofOfExpenditure extends ViewRecord
         return [
             EditAction::make(),
             RestoreAction::make()
-            ->label('Pulihkan')
-            ->icon('heroicon-o-arrow-path')
-            ->color('success')
-            ->requiresConfirmation(),
+                ->label('Pulihkan')
+                ->icon('heroicon-o-arrow-path')
+                ->color('success')
+                ->requiresConfirmation(),
+            Action::make('print')
+                ->label('Cetak')
+                ->icon('heroicon-o-printer')
+                ->color('info')
+                ->url(fn (CashProofOfExpenditure $record): string => route('bkp.print', $record))
+                ->openUrlInNewTab(),
         ];
     }
 }

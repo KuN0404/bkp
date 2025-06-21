@@ -62,7 +62,11 @@ class CashProofOfExpenditureResource extends Resource
                     ->options(Subdistrict::query()->withTrashed()->pluck('subdistrict_name', 'id'))
                     ->live()
                     ->searchable()
-                    ->afterStateUpdated(fn (Set $set) => $set('school_id', null))
+                    ->afterStateUpdated(function (Set $set) {
+                        $set('school_id', null);
+                        $set('activity_id', null);
+                        $set('director_name', null);
+                    })
                     ->dehydrated(false)
                     ->required(),
 
@@ -79,33 +83,47 @@ class CashProofOfExpenditureResource extends Resource
                     })
                     ->searchable()
                     ->live()
+                    ->afterStateUpdated(function (Set $set) {
+                        $set('activity_id', null);
+                        $set('director_name', null);
+                    })
                     ->required()
                     ->disabled(fn (Get $get): bool => !$get('subdistrict_id')),
 
-                Select::make('activity_type')
-                    ->label('Pilih Tipe Kegiatan')
-                    ->options(Activity::query()->withTrashed()->distinct()->pluck('activity_type', 'activity_type'))
-                    ->live()
-                    ->searchable()
-                    ->afterStateUpdated(fn (Set $set) => $set('activity_id', null))
-                    ->dehydrated(false)
-                    ->required(),
+                // Select::make('activity_type')
+                //     ->label('Pilih Tipe Kegiatan')
+                //     ->options(Activity::query()->withTrashed()->distinct()->pluck('activity_type', 'activity_type'))
+                //     ->live()
+                //     ->searchable()
+                //     ->afterStateUpdated(fn (Set $set) => $set('activity_id', null))
+                //     ->dehydrated(false)
+                //     ->required(),
 
                 Select::make('activity_id')
                     ->label('Nama Kegiatan')
                     ->options(function (Get $get): Collection {
-                        if (!$get('activity_type')) {
+                        $schoolId = $get('school_id');
+                        if (!$schoolId) {
+                            return collect(); // Tidak ada sekolah dipilih, tidak ada kegiatan
+                        }
+
+                        // Cari tipe sekolah (SD/SMP/SMA) dari sekolah yang dipilih
+                        $school = School::withTrashed()->find($schoolId);
+                        if (!$school) {
                             return collect();
                         }
+                        $schoolType = $school->school_type;
+
+                        // Filter kegiatan berdasarkan tipe sekolah
                         return Activity::query()
-                            ->where('activity_type', $get('activity_type'))
+                            ->where('activity_type', $schoolType)
                             ->withTrashed()
                             ->pluck('activity_name', 'id');
                     })
                     ->searchable()
                     ->live()
                     ->required()
-                    ->disabled(fn (Get $get): bool => !$get('activity_type'))
+                    ->disabled(fn (Get $get): bool => !$get('school_id'))
                     ->afterStateUpdated(function ($state, Set $set) {
                         $activity = Activity::withTrashed()->find($state);
                         $set('director_name', $activity?->director_name);
@@ -148,7 +166,6 @@ class CashProofOfExpenditureResource extends Resource
         if ($record) {
             // PERBAIKAN: Gunakan schoolWithTrashed untuk konsistensi
             $data['subdistrict_id'] = $record->schoolWithTrashed?->subdistrict_id;
-            $data['activity_type'] = $record->activityWithTrashed?->activity_type;
             $data['director_name'] = $record->activityWithTrashed?->director_name;
         }
         return $data;
@@ -165,15 +182,11 @@ class CashProofOfExpenditureResource extends Resource
              TextEntry::make('schoolWithTrashed.school_type')
                 ->label('Tingkat Sekolah')
                 ->badge()
-                ->color(function (CashProofOfExpenditure $record): string {
-                        if ($record->school_type == "SD") {
-                            return 'danger';
-                        } elseif($record->school_type == "SMP") {
-                            return 'primary';
-                        }else{
-                            return 'info';
-                        }
-                    })
+                ->color(fn (string $state): string => match ($state) {
+                    'SD' => 'danger',
+                    'SMP' => 'primary',
+                    default => 'info', // Untuk nilai lainnya atau jika kosong
+                })
                     ->icon('heroicon-o-academic-cap'),
                 TextEntry::make('schoolWithTrashed.subdistrictWithTrashed.subdistrict_name')->label('Kecamatan'),
                 TextEntry::make('schoolWithTrashed.school_name')->label('Sekolah'),
@@ -186,16 +199,12 @@ class CashProofOfExpenditureResource extends Resource
                 TextEntry::make('activityWithTrashed.activity_type')
                     ->label('Tipe Kegiatan')
                     ->badge()
-                    ->color(function (CashProofOfExpenditure $record): string {
-                            if ($record->activity_type == "SD") {
-                                return 'danger';
-                            } elseif($record->activity_type == "SMP") {
-                                return 'primary';
-                            }else{
-                                return 'info';
-                            }
-                        })
-                        ->icon('heroicon-o-academic-cap'),
+                    ->color(fn (string $state): string => match ($state) {
+                        'SD' => 'danger',
+                        'SMP' => 'primary',
+                        default => 'info', // Untuk nilai lainnya atau jika kosong
+                    })
+                    ->icon('heroicon-o-academic-cap'),
                 TextEntry::make('activityWithTrashed.activity_name')->label('Kegiatan'),
                 TextEntry::make('activityWithTrashed.director_name')->label('Nama Direktur'),
                 TextEntry::make('number_of_students')->label('Jumlah Siswa'),
@@ -261,14 +270,10 @@ class CashProofOfExpenditureResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->badge()
-                    ->color(function (CashProofOfExpenditure $record): string {
-                        if ($record->activity_type == "SD") {
-                            return 'danger';
-                        } elseif($record->activity_type == "SMP") {
-                            return 'primary';
-                        }else{
-                            return 'info';
-                        }
+                    ->color(fn (string $state): string => match ($state) {
+                        'SD' => 'danger',
+                        'SMP' => 'primary',
+                        default => 'info', // Untuk nilai lainnya atau jika kosong
                     })
                     ->icon('heroicon-o-academic-cap'),
                 TextColumn::make('schoolWithTrashed.subdistrictWithTrashed.subdistrict_name')
