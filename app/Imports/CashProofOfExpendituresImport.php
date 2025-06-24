@@ -70,10 +70,10 @@ class CashProofOfExpendituresImport implements ToCollection, WithHeadingRow
                     'subdistrict_id' => $subdistrict->id,
                     'school_type'    => $validatedSchoolType,       // Gunakan nilai yang sudah divalidasi
                     'school_status'  => $validatedSchoolStatus,    // Gunakan nilai yang sudah divalidasi
-                    'principal_name' => $row['nama_kepala_sekolah'] ?? '',
-                    'principal_nip'  => $row['nip_kepala_sekolah'] ?? '',
-                    'treasurer_name' => $row['nama_bendahara'] ?? '',
-                    'treasurer_nip'  => $row['nip_bendahara'] ?? '',
+                    'principal_name' => $row['nama_kepala_sekolah'] ?? null,
+                    'principal_nip'  => $row['nip_kepala_sekolah'] ?? null,
+                    'treasurer_name' => $row['nama_bendahara'] ?? null,
+                    'treasurer_nip'  => $row['nip_bendahara'] ?? null,
                 ]
             );
 
