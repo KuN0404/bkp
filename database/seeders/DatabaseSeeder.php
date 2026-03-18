@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,12 +15,20 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Setup Spatie Roles
+        Role::firstOrCreate(['name' => 'super_admin']);
+        Role::firstOrCreate(['name' => 'admin']);
 
-        User::factory()->create([
-            'name' => 'Super Admin',
-            'username' => 'superadmin',
-            'password' => 'superadmin123',
-        ]);
+        $user = User::firstOrCreate(
+            ['username' => 'superadmin'],
+            [
+                'name' => 'Super Admin',
+                'email' => 'admin@admin.com',
+                'password' => Hash::make('superadmin123'), // Disarankan diubah
+                'role' => 'super_admin', // Legacy column
+            ]
+        );
+
+        $user->assignRole('super_admin');
     }
 }

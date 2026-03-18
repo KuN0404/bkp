@@ -22,6 +22,11 @@ class UserResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-users';
     protected static ?string $navigationGroup = 'Admin Management';
 
+    public static function canViewAny(): bool
+    {
+        return auth()->user()->hasRole('super_admin');
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -44,13 +49,10 @@ class UserResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->unique(ignoreRecord: true),
-                Select::make('role')
-                    ->label('Role')
-                    ->options([
-                        'admin' => 'Admin',
-                        'super_admin' => 'Super Admin',
-                    ])
-                    ->default('admin')
+                Select::make('roles')
+                    ->label('Role (Akses Spatie)')
+                    ->relationship('roles', 'name')
+                    ->preload()
                     ->required(),
                 TextInput::make('password')
                     ->password()
@@ -66,7 +68,7 @@ class UserResource extends Resource
             ->columns([
                 TextColumn::make('name')->searchable(),
                 TextColumn::make('email')->searchable(),
-                TextColumn::make('role'),
+                TextColumn::make('roles.name')->label('Role')->badge(),
                 TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->actions([
