@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\BulkActionGroup;
@@ -26,20 +27,35 @@ class UserResource extends Resource
         return $form
             ->schema([
                 TextInput::make('name')
+                    ->label('Nama Lengkap')
                     ->required()
                     ->maxLength(255),
+                TextInput::make('username')
+                    ->label('Username')
+                    ->required()
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true)
+                    ->rule('regex:/^[a-zA-Z0-9]*$/')
+                    ->validationMessages([
+                        'regex' => 'Username hanya boleh berisi huruf dan angka.',
+                    ]),
                 TextInput::make('email')
                     ->email()
                     ->required()
                     ->maxLength(255)
                     ->unique(ignoreRecord: true),
+                Select::make('role')
+                    ->label('Role')
+                    ->options([
+                        'admin' => 'Admin',
+                        'super_admin' => 'Super Admin',
+                    ])
+                    ->default('admin')
+                    ->required(),
                 TextInput::make('password')
                     ->password()
-                    // Hanya minta password saat membuat user baru
                     ->required(fn (string $context): bool => $context === 'create')
-                    // Jangan isi field password saat edit kecuali diubah
                     ->dehydrated(fn ($state) => filled($state))
-                    // Hash password sebelum disimpan
                     ->dehydrateStateUsing(fn ($state) => Hash::make($state)),
             ]);
     }

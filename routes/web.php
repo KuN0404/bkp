@@ -8,4 +8,6 @@ Route::get('/', function () {
 });
 
 
-Route::get('/bkp/{record}/print', [BkpPrintController::class, 'print'])->name('bkp.print');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/bkp/{record}/print', [BkpPrintController::class, 'print'])->name('bkp.print');
+});

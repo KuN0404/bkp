@@ -306,15 +306,15 @@ class CashProofOfExpenditureResource extends Resource
             ])
             ->filters([
                 TrashedFilter::make(),
-                SelectFilter::make('school')
+                SelectFilter::make('school_type')
                 ->label('Tingkat Sekolah')
                 ->relationship('school', 'school_type')
                 ->searchable(),
-                SelectFilter::make('school.subdistrict.subdistrict_name')
+                SelectFilter::make('subdistrict')
                 ->label('Kecamatan')
                 ->relationship('school.subdistrict', 'subdistrict_name')
                 ->searchable(),
-                SelectFilter::make('school')
+                SelectFilter::make('school_name')
                 ->label('Sekolah')
                 ->relationship('school', 'school_name')
                 ->searchable(),

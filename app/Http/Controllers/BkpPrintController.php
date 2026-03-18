@@ -15,6 +15,7 @@ class BkpPrintController extends Controller
      */
     public function print(CashProofOfExpenditure $record)
     {
+        $record->load(['schoolWithTrashed.subdistrictWithTrashed', 'activityWithTrashed']);
         return view('print.bkp', ['bkp' => $record]);
     }
 }

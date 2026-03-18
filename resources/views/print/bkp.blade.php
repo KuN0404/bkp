@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BKP - {{ $bkp->school->school_name ?? 'Nama Sekolah' }}</title>
+    <title>BKP - {{ $bkp->schoolWithTrashed->school_name ?? 'Nama Sekolah' }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -108,11 +108,11 @@
                     <td style="width: 240px;">Telah diterima dari bendaharawan</td>
                     <td style="width: 20px;">:</td>
                     <td class="fw-bold">
-                        {{ $bkp->school->school_type ?? '' }}@if($bkp->school->school_status == 'Negeri')N
+                        {{ $bkp->schoolWithTrashed->school_type ?? '' }}@if($bkp->schoolWithTrashed->school_status == 'Negeri')N
                         @else
 S
                         @endif
-                        {{ $bkp->school->school_name ?? '' }}
+                        {{ $bkp->schoolWithTrashed->school_name ?? '' }}
                     </td>
                 </tr>
                 <tr>
@@ -124,7 +124,7 @@ S
                     <td>Untuk Pembayaran</td>
                     <td>:</td>
                     <td>
-                        {{ $bkp->activity->activity_name ?? '' }}
+                        {{ $bkp->activityWithTrashed->activity_name ?? '' }}
                     </td>
                 </tr>
             </table>
@@ -144,21 +144,21 @@ S
                     <div class="mb-2">Mengetahui dan Menyetujui</div>
                     <div class="fw-bold mb-4">Kepala Sekolah</div>
                     <div style="height: 40px;"></div>
-                    <div class="fw-bold text-decoration-underline text-uppercase">{{ $bkp->school->principal_name ?? '..........................................' }}</div>
-                    <div class="small">NIP: {{ $bkp->school->principal_nip ?? '..........................................' }}</div>
+                    <div class="fw-bold text-decoration-underline text-uppercase">{{ $bkp->schoolWithTrashed->principal_name ?? '..........................................' }}</div>
+                    <div class="small">NIP: {{ $bkp->schoolWithTrashed->principal_nip ?? '..........................................' }}</div>
                 </div>
                 <div class="col-4 signature-col">
                     <div class="mb-2">Dibayar tanggal, .......................</div>
                     <div class="fw-bold mb-4">Bendahara Sekolah</div>
                     <div style="height: 40px;"></div>
-                    <div class="fw-bold text-decoration-underline text-uppercase">{{ $bkp->school->treasurer_name ?? '..........................................' }}</div>
-                    <div class="small">NIP: {{ $bkp->school->treasurer_nip ?? '..........................................' }}</div>
+                    <div class="fw-bold text-decoration-underline text-uppercase">{{ $bkp->schoolWithTrashed->treasurer_name ?? '..........................................' }}</div>
+                    <div class="small">NIP: {{ $bkp->schoolWithTrashed->treasurer_nip ?? '..........................................' }}</div>
                 </div>
                 <div class="col-4 signature-col">
                     <div class="mb-2">Kotabumi, ..............................</div>
                     <div class="fw-bold mb-4">Penerima</div>
                     <div style="height: 40px;"></div>
-                    <div class="fw-bold text-decoration-underline text-uppercase">{{ $bkp->activity->director_name ?? '..........................................' }}</div>
+                    <div class="fw-bold text-decoration-underline text-uppercase">{{ $bkp->activityWithTrashed->director_name ?? '..........................................' }}</div>
                     <div class="small">DIREKTUR</div>
                 </div>
             </div>
